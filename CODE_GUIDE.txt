@@ -1,0 +1,242 @@
+Copyright (c) 2015, Alex Kramer <kramer.alex.kramer@gmail.com>
+See the LICENSE.txt file at the top-level directory of the distribution.
+
+I. Description
+==============
+This document contains general guidelines for modern Fortran source code. These
+guidelines are based purely on my own experiences writing Fortran code. There
+are a variety of source code style and coding guides, each with their own
+benefits; this document exists solely to establish consistency. I use this
+guide for all of my own Fortran code; hopefully other find it useful as well.
+
+The guiding principle of this document is that all code should strive to be
+consistently written and comprehensible, even if that comes at a small
+performance cost. Modern compilers are really good at optimizing individual
+pieces of code; it should never be necessary to sacrifice code quality for
+marginal performance improvements. Manual optimization should come in the
+form of carefully thinking about algorithms and overall program structure.
+
+II. General style guidelines
+============================
+
+The fundamental principle of any style guide is consistency. I suggest the
+following:
+
+* All code should be grouped into concise, logical sections and separated into
+  various source code files accordingly. At the highest level, only programs
+  and modules should be used, with one module per source code file.
+
+* All code should be written in modern Fortran free-form format and syntax,
+  using lowercase characters. Moreover, all code should adhere to compiler-
+  independent standards.
+
+* Spaces, not tabs, should be used, with two spaces indicating each successive
+  level of indentation. Line breaks should be used to improve readability and
+  separate logical sections of code.
+
+* Line breaks should occur at 79 characters.
+
+* Names should be descriptive enough for a qualified audience to easily
+  understand their function in the context of the source code. Appropriate
+  documentation should supplement good names; it is not a replacement.
+
+* All program units should use the `implicit none` statement.
+
+* All functions should be pure, in that they do not modify any input arguments.
+  If a procedure has side effects, it should be a subroutine.
+
+* All subroutines should explicitly specify the intent of input arguments.
+
+* When possible, variables and procedures should be private, with public
+  elements explicitly declared as such, either through the use of a shared
+  module or `public` statements. Moreover, `use` statements should be explicit,
+  as in:
+
+  ```
+  use modname, only: ...
+  ```
+
+III. Overall program organization
+=================================
+
+Modules are the core logical units of a program. There are two types of modules:
+
+* Program-independent modules
+
+  These modules have no dependencies, with the exception of basic global
+  variables, such as kind parameters or numerical constants. It should be
+  simple to copy and paste these modules as is for use in other projects.
+
+* Program-dependent modules
+
+  These modules are integrated with the overall structure of the program in
+  question. They may depend on shared program-specific variables or implement
+  functionality that would not make sense outside of their overall program.
+
+Whenever possible, modules should be program-independent. This generally
+results in cleaner and more maintainable code. Of course, there is such a thing
+as writing overly modular / abstract code. As a general rule, if a module does
+something that could be useful in other programs, it should be written in a
+program-independent manner.
+
+III.a Required modules
+----------------------
+
+A program, at minimum, should have the following modules (files):
+
+./globvars.f90 (global variable module)
+./progvars.f90 (program variable module)
+./setup.f90 (setup / cleanup module)
+
+III.a.1 Global variable module
+______________________________
+
+The global variable module (./globvars.f90) provides kind parameters, numerical
+constants, and any other variables that are truly program independent. This
+module should be very short. If needed, program-independent modules may use
+this module:
+
+```
+module mod_name
+  use globvars, only: ...
+
+  ...
+
+end module mod_name
+```
+
+III.a.2 Program variable module
+_______________________________
+
+The program variable module (./progvars.f90) provides program parameters and
+core variables for the program in question. This module should generally be
+fairly short; the vast majority of variables in numerical codes can be declared
+at the module-specific level.
+
+This module should also use the global variable module, to prevent redundant
+usage statements:
+
+```
+module progvars
+  use globvars
+
+  ...
+
+end module progvars
+```
+
+III.a.3 Setup / cleanup module
+______________________________
+
+The setup / cleanup module (./setup.f90) is responsible for all program
+initialization and cleanup. It should have two (and only two) public
+subroutines:
+
+  * setup_init()
+  * setup_cleanup()
+
+that can be called by the main program pre- and post-execution. These routines
+are responsible for ensuring that all required parameters, program variables,
+modules, etc. are properly initialized and cleaned up.
+
+Moreover, for clarity, all program-dependent module dependencies should be
+handled by the setup/cleanup module. The reasoning for this is that it
+simplifies top-level dependency handling, especially if multiple
+program-dependent modules depend on the same program-independent module.
+
+Nested program-independent dependencies of program-independent modules should
+still be handled within each respective program-independent module.
+
+III.b Module Organization
+-------------------------
+
+Within each module, private module variables should be managed by public
+initialization and cleanup subroutines within that module, which can be easily
+called by a program's setup module before and after program execution.
+
+Modules should follow the following format:
+
+```
+module modname
+  ! If needed, global variable use statement here
+  use globvars, only: dp
+
+  ! Additional use statements here
+
+  implicit none
+
+  private
+
+  ! General module methods
+  public :: modname_init
+  public :: modname_cleanup
+
+  ! Other public methods declared here
+  ...
+
+  ! Private module variables
+  ...
+
+contains
+
+  subroutine modname_init(...)
+
+  ...
+
+  end subroutine modname_init
+
+  subroutine modname_cleanup(...)
+
+  ...
+
+  end subroutine modname_cleanup
+
+  real(dp) function modname_func1(...) result(val)
+
+    ...
+
+  end function modname_func1
+
+  subroutine modname_sub1(...)
+
+    ...
+
+  end subroutine modname_sub1
+
+end module modname
+```
+
+Note that all procedures are prefaced with the name of the module; this is for
+readability when using those procedures in other modules / programs -- it makes
+it very clear where the procedure in question originates.
+
+Moreover, note that `implicit none` is only specified at the top of the module;
+it does not need to be given in functions and subroutines inside the module.
+
+III.c Overall program format
+----------------------------
+
+A program should be formatted as follows:
+
+```
+program prog_name
+  use progvars
+  use setup, only: setup_init, setup_cleanup
+
+  ! Any other use statements here
+  ...
+
+  implicit none
+
+  ! Local variables here
+  ...
+
+  call setup_init()
+
+  ! Program execution
+  ...
+
+  call setup_cleanup()
+
+end program prog_name
+```
