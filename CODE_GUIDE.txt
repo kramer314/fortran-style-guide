@@ -4,17 +4,19 @@ See the LICENSE.txt file at the top-level directory of the distribution.
 I. Description
 ==============
 This document contains general guidelines for modern Fortran source code. These
-guidelines are based purely on my own experiences writing Fortran code. There
-are a variety of source code style and coding guides, each with their own
-benefits; this document exists solely to establish consistency. I use this
-guide for all of my own Fortran code; hopefully other find it useful as well.
+guidelines are based purely on my own experiences writing Fortran code for
+numerical scientific computer. There are a variety of available source code
+style and coding guides, each with their own benefits; this document exists
+solely to establish consistency within my own work. I hope others may find it
+useful as well.
 
 The guiding principle of this document is that all code should strive to be
-consistently written and comprehensible, even if that comes at a small
-performance cost. Modern compilers are really good at optimizing individual
-pieces of code; it should never be necessary to sacrifice code quality for
-marginal performance improvements. Manual optimization should come in the
-form of carefully thinking about algorithms and overall program structure.
+comprehensible, even if that comes at a small performance cost. Modern
+compilers are proficient at optimizing individual pieces of code, and the cost
+of computational resources is low enough that it should not be necessary to
+sacrifice code quality for marginal performance improvements in all but the
+most extreme situations. Manual optimization should primarily come in the form
+of algorithm selection and careful program design.
 
 II. General style guidelines
 ============================
@@ -28,7 +30,11 @@ following:
 
 * All code should be written in modern Fortran free-form format and syntax,
   using lowercase characters. Moreover, all code should adhere to compiler-
-  independent standards.
+  independent standards. Whenever possible, code should strive to be platform-
+  independent.
+
+* External dependencies should be limited when possible. If used, external
+  libraries should be well-known and actively maintained.
 
 * Spaces, not tabs, should be used, with two spaces indicating each successive
   level of indentation. Line breaks should be used to improve readability and
@@ -94,7 +100,7 @@ ______________________________
 The global variable module (./globvars.f90) provides kind parameters, numerical
 constants, and any other variables that are truly program independent. This
 module should be very short. If needed, program-independent modules may use
-this module:
+this module as follows:
 
 ```
 module mod_name
@@ -118,7 +124,7 @@ usage statements:
 
 ```
 module progvars
-  use globvars
+  use globvars, only: ...
 
   ...
 
@@ -157,6 +163,7 @@ called by a program's setup module before and after program execution.
 Modules should follow the following format:
 
 ```
+! Example module using `dp` to indicate a double precision floating point kind
 module modname
   ! If needed, global variable use statement here
   use globvars, only: dp
@@ -179,24 +186,28 @@ module modname
 
 contains
 
+  ! Initialization subroutine
   subroutine modname_init(...)
 
   ...
 
   end subroutine modname_init
 
+  ! Cleanup subroutine
   subroutine modname_cleanup(...)
 
   ...
 
   end subroutine modname_cleanup
 
+  ! Example function
   real(dp) function modname_func1(...) result(val)
 
     ...
 
   end function modname_func1
 
+  ! Example subroutine
   subroutine modname_sub1(...)
 
     ...
@@ -206,12 +217,14 @@ contains
 end module modname
 ```
 
-Note that all procedures are prefaced with the name of the module; this is for
-readability when using those procedures in other modules / programs -- it makes
-it very clear where the procedure in question originates.
+Note that all procedures are prefaced with the name of the module. This
+convention is for readability when using those procedures in other modules or
+programs; it becomes clear where the procedure in question originates.
 
 Moreover, note that `implicit none` is only specified at the top of the module;
-it does not need to be given in functions and subroutines inside the module.
+it does not need to be given in functions and subroutines inside the module,
+since the implicit statement applies to all sub-units within the overall
+program unit.
 
 III.c Overall program format
 ----------------------------
@@ -220,7 +233,7 @@ A program should be formatted as follows:
 
 ```
 program prog_name
-  use progvars
+  use progvars, only: ...
   use setup, only: setup_init, setup_cleanup
 
   ! Any other use statements here
