@@ -3,9 +3,11 @@ See the LICENSE.txt file at the top-level directory of the distribution.
 
 I. Description
 ==============
-This document contains general guidelines for modern Fortran source code. These
-guidelines are based purely on my own experiences writing Fortran code for
-numerical scientific computer. There are a variety of available source code
+
+This document contains general guidelines for writing modern Fortran source
+code for numerical computing applications. These guidelines are based purely on
+my own experiences writing Fortran code for medium- to large-scale numerical
+scientific computing projects. There are a variety of available source code
 style and coding guides, each with their own benefits; this document exists
 solely to establish consistency within my own work. I hope others may find it
 useful as well.
@@ -18,33 +20,41 @@ sacrifice code quality for marginal performance improvements in all but the
 most extreme situations. Manual optimization should primarily come in the form
 of algorithm selection and careful program design.
 
+While this document is written primarily for purely numerical computing,
+Fortran can be used as a general purpose language. Some aspects of this
+document may be useful for non-numerical applications. Of particular note are
+sections II, and IV-VI, which discuss general style guidelines, intrinsic data
+types, I/O, and advanced modern Fortran features. However, since the primary
+use and design case of Fortran is numeric scientific computing, it may be
+better to use a different language designed for general purpose use instead of
+forcing Fortran to function as a general purpose language.
+
 II. General style guidelines
 ============================
 
 The fundamental principle of any style guide is consistency. I suggest the
-following:
+following, in addition to widely-accepted "good programming practices":
+
+* All code should be written in modern Fortran free-form format and syntax,
+  using lowercase characters. Moreover, all code should adhere to compiler-
+  independent standards. Whenever possible, code should strive to be platform-
+  independent, although it is usually safe to assume POSIX-compliance.
 
 * All code should be grouped into concise, logical sections and separated into
   various source code files accordingly. At the highest level, only programs
   and modules should be used, with one module per source code file.
 
-* All code should be written in modern Fortran free-form format and syntax,
-  using lowercase characters. Moreover, all code should adhere to compiler-
-  independent standards. Whenever possible, code should strive to be platform-
-  independent.
-
-* External dependencies should be limited when possible. If used, external
-  libraries should be well-known and actively maintained.
+* Names should be concise, but descriptive enough for a qualified audience to
+  easily understand their function in the context of the source code.
+  Appropriate documentation should supplement good names; it is not a
+  replacement. Moreover, names should use_underscores to denote breaks, instead
+  of usingCamelCase.
 
 * Spaces, not tabs, should be used, with two spaces indicating each successive
-  level of indentation. Line breaks should be used to improve readability and
-  separate logical sections of code.
+  level of indentation. Line breaks should be used as needed to improve
+  readability and separate logical sections of code.
 
 * Line breaks should occur at 79 characters.
-
-* Names should be descriptive enough for a qualified audience to easily
-  understand their function in the context of the source code. Appropriate
-  documentation should supplement good names; it is not a replacement.
 
 * All program units should use the `implicit none` statement.
 
@@ -61,6 +71,11 @@ following:
   ```
   use modname, only: ...
   ```
+
+* Individual procedures should not track their own state (e.g. through the
+  `save` attribute). State-tracking should be done at the module level or by
+  passing state variables in procedure argument lists.
+
 
 III. Overall program organization
 =================================
@@ -253,3 +268,111 @@ program prog_name
 
 end program prog_name
 ```
+
+IV. Data types
+==============
+
+IV.a Numbers
+------------
+Relevant kind parameters should be declared in a global variable module (see
+above), and used to declare all numbers. For instance, if `dp` refers to a
+double precision kind, then a real floating point numbers `x` should be
+declared as:
+
+```
+real(dp) :: x
+``
+
+and constants using that same kind should be denoted with the `dp` suffix, as in:
+
+```
+1.0_dp
+```
+
+IV.b Arrays and dynamic memory
+------------------------------
+
+IV.b.1 General array guidlines
+______________________________
+
+Intrinsic procedures should always be used when available. not only does this
+increase readability, but intrinsic procedures can generally be optimized more
+than manual implementations.
+
+Automatic arrays and allocatable arrays should be used to implement dynamic
+memory; pointers should only be used when allocatable arrays are not possible,
+as they are the most error-prone. The most common use case when pointers are
+necessary is when implementing user-defined types, classes, and objects where
+allocatable arrays cannot be used.
+
+When passing arrays into and out of procedures, use assumed-shape patterns
+whenever possible; this does not copy data and passes the shape and size of the
+array to the called procedure automatically. Note that by storing procedures in
+modules, the compiler handles creating the required data interfaces.
+
+Unless using a compiler that does not support Fortran 2003, array constructors
+should use square bracket "[" and "]" delimiters for array constructors instead
+of the older "(/" and "/)" used in prior standards.
+
+IV.b.2 Element-wise array operations
+____________________________________
+
+Elemental procedures should be the preferred way of implementing element-wise
+operations, and element-wise operations should be restricted to compatible
+shapes.
+
+IV.b.3 Multidimensional array slicing
+_____________________________________
+
+For performance, multidimensional array slices should always use contiguous
+strides, where the colons are on the left, e.g. `m(:, :, 1)`. This avoids skips
+in memory access.
+
+
+IV.c Characters and formatting
+------------------------------
+
+TODO
+
+V. Input / Output
+=================
+
+TODO
+
+VI. Advanced modern Fortran features
+===================================
+
+V.a Function overloading
+------------------------
+
+Generic functions via interfaces are useful, but should be used with
+care. Function overloading for the sake of reusing specific names between
+modules without conflict should be avoided, and is always resolved by using the
+module-procedure naming convention discussed above. Additionally, using a
+"managing" procedure that determines which inner procedure to call based on
+argument type may be more useful and / or result in more readable code than
+using an interface statement.
+
+V.b Derived types, classes, and objects
+---------------------------------------
+
+While modern Fortran standards provide extensive support for object-oriented
+programming, Fortran remains a largely procedural language, with full
+object-oriented features requiring additional overhead to use. For many purely
+numerical applications, adopting a procedural paradigm with sufficiently
+modular code may result in more readable code than an object-oriented
+paradigm. Object-oriented features should only be used when necessary.
+
+Derived (user-defined) types, classes, and objects should always be defined
+within their own modules. Care should be taken when overloading operators for
+derived types, as this significantly raises code complexity.
+
+Also, when using derived types with an `intent(out)` statement in a procedure,
+all components of that derived type should be assigned within the procedure,
+otherwise those components could become undefined on exit. `intent(out)` behaves
+like the result variable of a function, where all components must be assigned.
+
+V.c Pointers
+============
+
+TODO
