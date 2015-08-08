@@ -103,7 +103,8 @@ program-independent manner.
 III.a Required modules
 ----------------------
 
-A program, at minimum, should have the following modules (files):
+In addition to an actual program, a project should have the following modules
+(files) that are used as needed.
 
 ./globvars.f90 (global variable module)
 ./progvars.f90 (program variable module)
@@ -145,6 +146,13 @@ module progvars
 
 end module progvars
 ```
+
+The usage of this module is an exception to the rule given in section II that
+module usage statements should employ the ``only`` keyword. Since this module
+is explicitly meant for core program variables (in some sense, "global"
+variables, there is no problem in modules using the entire module. Of course,
+employing the ``only`` keyword is still recommended, even though it is not
+necessary.
 
 III.a.3 Setup / cleanup module
 ______________________________
@@ -360,7 +368,7 @@ While modern Fortran standards provide extensive support for object-oriented
 programming, Fortran remains a largely procedural language, with full
 object-oriented features requiring additional overhead to use. For many purely
 numerical applications, adopting a procedural paradigm with sufficiently
-modular code may result in more readable code than an object-oriented
+modular code may result in more readable code than using an object-oriented
 paradigm. Object-oriented features should only be used when necessary.
 
 Derived (user-defined) types, classes, and objects should always be defined
@@ -369,8 +377,9 @@ derived types, as this significantly raises code complexity.
 
 Also, when using derived types with an `intent(out)` statement in a procedure,
 all components of that derived type should be assigned within the procedure,
-otherwise those components could become undefined on exit. `intent(out)` behaves
-like the result variable of a function, where all components must be assigned.
+otherwise those components could become undefined on exit. `intent(out)`
+behaves like the result variable of a function, where all components must be
+assigned.
 
 V.c Pointers
 ============
