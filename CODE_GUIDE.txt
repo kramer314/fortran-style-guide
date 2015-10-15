@@ -29,6 +29,7 @@ use and design case of Fortran is numeric scientific computing, it may be
 better to use a different language designed for general purpose use instead of
 forcing Fortran to function as a general purpose language.
 
+
 II. General style guidelines
 ============================
 
@@ -277,6 +278,7 @@ program prog_name
 end program prog_name
 ```
 
+
 IV. Data types
 ==============
 
@@ -303,9 +305,9 @@ IV.b Arrays and dynamic memory
 IV.b.1 General array guidlines
 ______________________________
 
-Intrinsic procedures should always be used when available. not only does this
-increase readability, but intrinsic procedures can generally be optimized more
-than manual implementations.
+Intrinsic procedures should always be used when available. Not only does this
+increase readability and reliability, but intrinsic procedures are generally
+sufficiently optimized for the vast majority of tasks.
 
 Automatic arrays and allocatable arrays should be used to implement dynamic
 memory; pointers should only be used when allocatable arrays are not possible,
@@ -348,7 +350,7 @@ V. Input / Output
 TODO
 
 VI. Advanced modern Fortran features
-===================================
+====================================
 
 V.a Function overloading
 ------------------------
