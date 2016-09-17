@@ -1,6 +1,15 @@
 Copyright (c) 2015, Alex Kramer <kramer.alex.kramer@gmail.com>
 See the LICENSE.txt file at the top-level directory of the distribution.
 
+0. Table of contents
+====================
+
+I. Description
+II. General style guidelines
+III. Overall program organization
+IV. Data types
+V. Input/Output
+
 I. Description
 ==============
 
@@ -362,6 +371,22 @@ module-procedure naming convention discussed above. Additionally, using a
 "managing" procedure that determines which inner procedure to call based on
 argument type may be more useful and / or result in more readable code than
 using an interface statement.
+
+One notable exception to the above occurs when writing shared (i.e. library)
+code where the same type of function (in terms of inputs, outputs, and
+functionality) is made available for different data types. For instance, many
+numerical routines may be defined for all combinations of single and double
+precsision real and complex types. In such a case, it makes sense to use an
+interface block, and the recommended naming scheme would be something like:
+
+```
+interface modname_func
+  module procedure modname_func_real_dp
+  module procedure modname_func_cmplx_dp
+  module procedure modname_func_real_sp
+  module procedure modname_func_cmplx_sp
+end interface modname_func
+```
 
 V.b Derived types, classes, and objects
 ---------------------------------------
